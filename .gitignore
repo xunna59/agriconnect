@@ -1,0 +1,31 @@
+# Dependency directories
+node_modules/
+private/
+
+# Logs and debugging
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Docker
+docker-compose.override.yml
+Dockerfile.dev
+# Optional: ignore volumes if you map them
+/data
+/pgdata
+
+# Editor/IDE
+.vscode/
+.idea/
+*.swp
