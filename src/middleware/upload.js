@@ -5,13 +5,13 @@ const cloudinary = require("../config/cloudinary");
 // Allowed image types
 const allowedMimeTypes = ["image/jpeg", "image/png", "image/jpg", "image/gif", "image/webp"];
 
-// 5MB size limit (you can adjust)
+// 5MB size limit
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 // Use memory storage (buffer)
 const storage = multer.memoryStorage();
 
-// File filter for validating file type and size
+// File filter to validate file type
 const fileFilter = (req, file, cb) => {
   if (!allowedMimeTypes.includes(file.mimetype)) {
     return cb(new Error("Invalid file type. Only JPG, PNG, WEBP, and GIF are allowed."), false);
@@ -19,7 +19,7 @@ const fileFilter = (req, file, cb) => {
   cb(null, true);
 };
 
-// Configure multer with limits and file filter
+// Configure multer
 const upload = multer({
   storage,
   fileFilter,
@@ -53,20 +53,26 @@ const uploadToCloudinary = (fieldName, options = {}) => {
         return res.status(400).json({ error: message });
       }
 
-      const files = multiple ? req.files : [req.file];
+      // ✅ Safe check before accessing files
+      const files = multiple
+        ? req.files && req.files.length ? req.files : []
+        : req.file
+        ? [req.file]
+        : [];
 
-      if (!files || files.length === 0) {
-        return res.status(400).json({ error: "No files uploaded" });
+      // If no file uploaded, skip Cloudinary upload and continue
+      if (!files.length) {
+        return next();
       }
 
       try {
         const uploadPromises = files.map((file) => {
           return new Promise((resolve, reject) => {
-            // Sanitize file name: remove spaces & special chars
-            const cleanName = file.originalname
-              .replace(/\s+/g, "_") // replace spaces
-              .replace(/[^a-zA-Z0-9._-]/g, "") // remove unsafe chars
-              .replace(/\.[^/.]+$/, ""); // remove extension
+            // Sanitize file name safely
+            const cleanName = (file.originalname || "image")
+              .replace(/\s+/g, "_")
+              .replace(/[^a-zA-Z0-9._-]/g, "")
+              .replace(/\.[^/.]+$/, "");
 
             const publicId = `${cleanName}_${Date.now()}`;
 
@@ -74,7 +80,7 @@ const uploadToCloudinary = (fieldName, options = {}) => {
               {
                 folder,
                 public_id: publicId,
-                resource_type: "auto", // handles all image types
+                resource_type: "auto",
               },
               (error, result) => {
                 if (error) return reject(error);
@@ -88,7 +94,7 @@ const uploadToCloudinary = (fieldName, options = {}) => {
 
         const urls = await Promise.all(uploadPromises);
 
-        // Attach uploaded URLs to request for next middleware
+        // Attach Cloudinary URLs to request
         req.uploadedFiles = multiple ? urls : urls[0];
 
         next();
