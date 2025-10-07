@@ -1,4 +1,4 @@
-const { User } = require('../models');
+const { User, FarmerProfile } = require('../models');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
@@ -26,6 +26,16 @@ register: async (req, res) => {
       password: hashedPassword,
       role: userRole
     });
+
+        if (userRole === 'farmer') {
+      await FarmerProfile.create({
+        userId: user.id,
+        farmName: `${fullname}'s Farm`,
+        location: '',
+        bio: '',
+        coverPhoto: ''
+      });
+    }
 
     // Generate JWT
     const token = jwt.sign(
