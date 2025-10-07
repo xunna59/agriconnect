@@ -11,6 +11,7 @@ const WalletTransactionController = require('../controllers/walletTransactionCon
 // Middleware
 const authMiddleware = require('../middleware/authMiddleware');
 const roleMiddleware = require('../middleware/roleMiddleware');
+const uploadToCloudinary = require("../middleware/upload");
 
 
 // app status check route
@@ -39,7 +40,7 @@ router.use(authMiddleware); // all routes below require authentication
 
 // Farmer Profile
 router.get('/farmer/profile', roleMiddleware(['farmer']), FarmerProfileController.getProfile);
-router.put('/farmer/profile', roleMiddleware(['farmer']), FarmerProfileController.updateProfile);
+router.put('/farmer/profile', roleMiddleware(['farmer']),  uploadToCloudinary("coverPhoto", { multiple: false, folder: "farmer_covers" }), FarmerProfileController.updateProfile);
 
 // Products (Farmer)
 router.post('/products', roleMiddleware(['farmer']), ProductController.create);
