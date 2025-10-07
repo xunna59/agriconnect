@@ -1,23 +1,29 @@
 const { Product } = require('../models');
 
 const ProductController = {
-  create: async (req, res) => {
-    try {
-      if (req.user.role !== 'farmer') return res.status(403).json({ error: 'Forbidden' });
+ create: async (req, res) => {
+  try {
+    if (req.user.role !== "farmer")
+      return res.status(403).json({ error: "Forbidden" });
 
-      const { name, description, price, images } = req.body;
-      const product = await Product.create({
-        farmerId: req.user.id,
-        name,
-        description,
-        price,
-        images
-      });
-      res.json(product);
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  },
+    const { name, description, price } = req.body;
+
+    const imageUrls = req.uploadedFiles || [];
+
+    const product = await Product.create({
+      farmerId: req.user.id,
+      name,
+      description,
+      price,
+      images: imageUrls, // store array of image URLs
+    });
+
+    res.status(201).json(product);
+  } catch (err) {
+    console.error("Product creation error:", err);
+    res.status(500).json({ error: err.message });
+  }
+},
 
   list: async (req, res) => {
     try {
@@ -46,21 +52,42 @@ const ProductController = {
     }
   },
 
-  update: async (req, res) => {
-    try {
-      if (req.user.role !== 'farmer') return res.status(403).json({ error: 'Forbidden' });
+ update: async (req, res) => {
+  try {
+    if (req.user.role !== "farmer")
+      return res.status(403).json({ error: "Forbidden" });
 
-      const product = await Product.findByPk(req.params.id);
-      if (!product) return res.status(404).json({ error: 'Product not found' });
-      if (product.farmerId !== req.user.id) return res.status(403).json({ error: 'Forbidden' });
+    const product = await Product.findByPk(req.params.id);
+    if (!product)
+      return res.status(404).json({ error: "Product not found" });
+    if (product.farmerId !== req.user.id)
+      return res.status(403).json({ error: "Forbidden" });
 
-      const { name, description, price, images } = req.body;
-      await product.update({ name, description, price, images });
-      res.json(product);
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  },
+    const { name, description, price } = req.body;
+
+    // Get newly uploaded images (if any)
+    const newImages = req.uploadedFiles || [];
+
+    // Merge existing images with new ones (optional)
+    // If you want to **replace all images**, use only `newImages`
+    const updatedImages = newImages.length
+      ? [...(product.images || []), ...newImages]
+      : product.images;
+
+    await product.update({
+      name,
+      description,
+      price,
+      images: updatedImages,
+    });
+
+    res.json(product);
+  } catch (err) {
+    console.error("Product update error:", err);
+    res.status(500).json({ error: err.message });
+  }
+},
+
 
   delete: async (req, res) => {
     try {
