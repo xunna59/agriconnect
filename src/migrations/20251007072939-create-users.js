@@ -30,6 +30,10 @@ module.exports = {
         type: Sequelize.ENUM('farmer', 'buyer', 'admin'),
         defaultValue: 'buyer',
       },
+       wallet_balance: { 
+      type: Sequelize.FLOAT,
+      defaultValue: 0.0,
+    },
       created_at: {
         type: Sequelize.DATE,
         allowNull: false,

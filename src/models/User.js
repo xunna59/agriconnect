@@ -30,7 +30,7 @@ module.exports = (sequelize) => {
       allowNull: false,
       defaultValue: "buyer",
     },
-     walletBalance: { 
+     wallet_balance: { 
       type: DataTypes.FLOAT,
       defaultValue: 0.0,
     },
