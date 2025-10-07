@@ -29,8 +29,8 @@ const loginLimiter = rateLimit({
 });
 
 /////////////////////////
-router.post('/register', AuthController.register);
-router.post('/login', AuthController.login);
+router.post('/auth/register', AuthController.register);
+router.post('/auth/login', AuthController.login);
 
 /////////////////////////
 // Protected Routes
