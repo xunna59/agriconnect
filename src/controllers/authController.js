@@ -27,7 +27,7 @@ register: async (req, res) => {
       role: userRole
     });
 
-        if (userRole === 'farmer') {
+      if (userRole === 'farmer') {
       await FarmerProfile.create({
         userId: user.id,
         farmName: `${fullname}'s Farm`,
