@@ -2,12 +2,12 @@ const express = require('express');
 const router = express.Router();
 const { body, param } = require('express-validator');
 const rateLimit = require('express-rate-limit');
-const AuthController = require('../controllers/AuthController');
+const AuthController = require('../controllers/authController');
 const FarmerProfileController = require('../controllers/FarmerProfileController');
-const ProductController = require('../controllers/ProductController');
-const OrderController = require('../controllers/OrderController');
-const PayoutController = require('../controllers/PayoutController');
-const WalletTransactionController = require('../controllers/WalletTransactionController');
+const ProductController = require('../controllers/productController');
+const OrderController = require('../controllers/orderController');
+const PayoutController = require('../controllers/payoutController');
+const WalletTransactionController = require('../controllers/walletTransactionController');
 // Middleware
 const authMiddleware = require('../middleware/authMiddleware');
 const roleMiddleware = require('../middleware/roleMiddleware');
