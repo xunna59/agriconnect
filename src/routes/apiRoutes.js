@@ -39,8 +39,8 @@ router.post('/auth/login', AuthController.login);
 router.use(authMiddleware); // all routes below require authentication
 
 // Farmer Profile
-router.get('/farmers', roleMiddleware([,'buyer','admin']), FarmerController.getAllFarmers);
-router.get('/farmers/:id', roleMiddleware([,'buyer','admin']), FarmerController.getFarmerById);
+router.get('/farmers', roleMiddleware([,'buyer','admin']), FarmerProfileController.getAllFarmers);
+router.get('/farmers/:id', roleMiddleware([,'buyer','admin']), FarmerProfileController.getFarmerById);
 router.get('/farmer/profile', roleMiddleware(['farmer']), FarmerProfileController.getProfile);
 router.put('/farmer/profile', roleMiddleware(['farmer']),  uploadToCloudinary("coverPhoto", { multiple: false, folder: "farmer_covers" }), FarmerProfileController.updateProfile);
 
