@@ -25,16 +25,45 @@ const ProductController = {
   }
 },
 
-  list: async (req, res) => {
-    try {
-      if (req.user.role !== 'farmer') return res.status(403).json({ error: 'Forbidden' });
+list: async (req, res) => {
+  try {
+    if (req.user.role !== "farmer")
+      return res.status(403).json({ error: "Forbidden" });
 
-      const products = await Product.findAll({ where: { farmerId: req.user.id } });
-      res.json(products);
-    } catch (err) {
-      res.status(500).json({ error: err.message });
-    }
-  },
+    // Extract pagination query params
+    const page = parseInt(req.query.page, 10) || 1; // default page 1
+    const limit = parseInt(req.query.limit, 10) || 10; // default 10 per page
+    const offset = (page - 1) * limit;
+
+    // Fetch paginated products
+    const { count, rows: products } = await Product.findAndCountAll({
+      where: { farmerId: req.user.id },
+      order: [["created_at", "DESC"]],
+      limit,
+      offset,
+    });
+
+    const totalPages = Math.ceil(count / limit);
+
+    res.json({
+      status: "success",
+      message: "Products retrieved successfully.",
+      pagination: {
+        totalItems: count,
+        totalPages,
+        currentPage: page,
+        pageSize: limit,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
+      data: products,
+    });
+  } catch (err) {
+    console.error("Product list error:", err);
+    res.status(500).json({ error: err.message });
+  }
+},
+
 
   get: async (req, res) => {
     try {
