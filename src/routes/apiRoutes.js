@@ -46,7 +46,7 @@ router.put('/farmer/profile', roleMiddleware(['farmer']),  uploadToCloudinary("c
 
 // Products (Farmer)
 router.post('/products', roleMiddleware(['farmer']), uploadToCloudinary("images", { multiple: true, maxCount: 5, folder: "farmer_products" }), ProductController.create);
-router.get('/products', roleMiddleware(['farmer']), ProductController.list);
+router.get('/products', roleMiddleware(['farmer', 'buyer', 'admin']), ProductController.list);
 router.get('/products/:id', roleMiddleware(['farmer','buyer','admin']), ProductController.get);
 router.put('/products/:id', roleMiddleware(['farmer']), uploadToCloudinary("images", { multiple: true, maxCount: 5, folder: "farmer_products" }), ProductController.update);
 router.delete('/products/:id', roleMiddleware(['farmer']), ProductController.delete);
