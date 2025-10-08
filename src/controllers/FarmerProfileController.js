@@ -125,6 +125,7 @@ const FarmerProfileController = {
       include: [
         {
           model: FarmerProfile,
+          as: farmerProfile,
           attributes: includeAttributes,
         },
       ],
@@ -184,6 +185,7 @@ const FarmerProfileController = {
         include: [
           {
             model: FarmerProfile,
+              as: farmerProfile,
             attributes: includeAttributes
           }
         ]
