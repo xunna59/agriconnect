@@ -59,6 +59,7 @@ router.get('/orders', roleMiddleware(['buyer','farmer','admin']), OrderControlle
 
 // payment
 router.get('/verify/:reference', roleMiddleware(['buyer']), OrderController.verifyPayment);
+router.post("/paystack/webhook", OrderController.handleWebhook);
 
 
 // Payouts
