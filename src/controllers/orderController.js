@@ -111,7 +111,7 @@ const OrderController = {
       if (!order) return res.status(404).json({ error: 'Order not found' });
 
       // 💰 Mark order as paid
-      order.status = 'paid';
+      order.status = 'in_escrow';
       await order.save();
 
       // 💼 Log escrow transaction
