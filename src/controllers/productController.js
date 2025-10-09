@@ -37,7 +37,6 @@ list: async (req, res) => {
 
     // Fetch paginated products
     const { count, rows: products } = await Product.findAndCountAll({
-      where: { farmerId: req.user.id },
       order: [["created_at", "DESC"]],
       limit,
       offset,
@@ -63,6 +62,62 @@ list: async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 },
+
+listFarmerProducts: async (req, res) => {
+  try {
+    // Allow only farmer or admin
+    if (!["farmer", "admin", "buyer"].includes(req.user.role))
+      return res.status(403).json({ error: "Forbidden" });
+
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 10;
+    const offset = (page - 1) * limit;
+
+    let whereClause = {};
+
+    if (req.user.role === "farmer") {
+      // Farmers can only view their own products
+      whereClause = { farmerId: req.user.id };
+    } else if (req.user.role === "admin") {
+      // Admin can view products of a specific farmer via params
+      const { farmerId } = req.params;
+      if (!farmerId)
+        return res
+          .status(400)
+          .json({ error: "Missing farmerId parameter for admin." });
+
+      whereClause = { farmerId };
+    }
+
+    const { count, rows: products } = await Product.findAndCountAll({
+      where: whereClause,
+      order: [["created_at", "DESC"]],
+      limit,
+      offset,
+    });
+
+    const totalPages = Math.ceil(count / limit);
+
+    res.json({
+      status: "success",
+      message: "Products retrieved successfully.",
+      pagination: {
+        totalItems: count,
+        totalPages,
+        currentPage: page,
+        pageSize: limit,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
+      data: products,
+    });
+  } catch (err) {
+    console.error("Product list error:", err);
+    res.status(500).json({ error: err.message });
+  }
+},
+
+
 
 
   get: async (req, res) => {
