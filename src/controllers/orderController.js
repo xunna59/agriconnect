@@ -110,14 +110,27 @@ const OrderController = {
       const order = await Order.findByPk(orderId);
       if (!order) return res.status(404).json({ error: 'Order not found' });
 
-      // 💰 Mark order as paid
-      order.status = 'in_escrow';
-      await order.save();
+    
+
+        const existingTransaction = await WalletTransaction.findOne({ where: { reference } });
+    if (existingTransaction) {
+      return res.status(200).json({
+        status: 'success',
+        message: 'Payment already verified earlier',
+        data: order,
+      });
+    }
+
+
+    if (order.status === 'pending') {
+  order.status = 'in_escrow';
+  await order.save();
+}
 
       // 💼 Log escrow transaction
       await WalletTransaction.create({
         userId: buyerId,
-        amount: order.totalPrice,
+        amount: order.totalAmount,
         type: 'escrow_hold',
         reference,
         note: 'Funds held in escrow',
@@ -133,6 +146,79 @@ const OrderController = {
       res.status(500).json({ error: err.message });
     }
   },
+
+  handleWebhook: async (req, res) => {
+  try {
+    const secret = process.env.PAYSTACK_SECRET_KEY;
+
+    // ✅ Verify Paystack signature
+    const hash = crypto
+      .createHmac("sha512", secret)
+      .update(JSON.stringify(req.body))
+      .digest("hex");
+
+    if (hash !== req.headers["x-paystack-signature"]) {
+      console.warn("❌ Invalid Paystack signature");
+      return res.status(400).send("Invalid signature");
+    }
+
+    const event = req.body;
+
+    if (event.event === "charge.success") {
+      const data = event.data;
+      const reference = data.reference;
+      const metadata = data.metadata || {};
+      const { orderId, buyerId, farmerId } = metadata;
+
+      // ✅ Check if wallet transaction already exists
+      const existingTxn = await WalletTransaction.findOne({ where: { reference } });
+      if (existingTxn) {
+        console.log("⚠️ Duplicate webhook ignored — transaction already processed:", reference);
+        return res.sendStatus(200);
+      }
+
+      // ✅ Confirm payment via Paystack API (optional but safer)
+      const verifyResponse = await PaystackService.verifyPayment(reference);
+      if (!verifyResponse || verifyResponse.status !== "success") {
+        console.warn("❌ Payment not verified for:", reference);
+        return res.status(400).send("Payment not verified");
+      }
+
+      // ✅ Retrieve the order
+      const order = await Order.findByPk(orderId);
+      if (!order) {
+        console.warn("❌ Order not found:", orderId);
+        return res.status(404).send("Order not found");
+      }
+
+      // ✅ Update order status only if it's still pending/unpaid
+      if (order.status === "pending" ) {
+        order.status = "in_escrow";
+        await order.save();
+        console.log("✅ Order status updated to 'paid' for:", order.id);
+      } else {
+        console.log(`⚠️ Order already ${order.status}, skipping status update.`);
+      }
+
+      // ✅ Record wallet transaction only once
+      await WalletTransaction.create({
+        userId: buyerId,
+        amount: order.totalAmount,
+        type: "payment",
+        reference,
+        note: "Payment confirmed by Paystack",
+      });
+
+      console.log("✅ Payment verified for Order:", order.id);
+    }
+
+    res.sendStatus(200);
+  } catch (error) {
+    console.error("Webhook error:", error);
+    res.sendStatus(500);
+  }
+},
+
 };
 
 module.exports = OrderController;
