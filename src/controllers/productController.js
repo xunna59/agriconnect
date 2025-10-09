@@ -27,8 +27,8 @@ const ProductController = {
 
 list: async (req, res) => {
   try {
-    if (req.user.role !== "farmer")
-      return res.status(403).json({ error: "Forbidden" });
+    // if (req.user.role !== "farmer")
+    //   return res.status(403).json({ error: "Forbidden" });
 
     // Extract pagination query params
     const page = parseInt(req.query.page, 10) || 1; // default page 1

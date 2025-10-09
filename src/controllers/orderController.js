@@ -37,7 +37,7 @@ const OrderController = {
 
    placeOrder: async (req, res) => {
     try {
-      if (req.user.role !== 'buyer') return res.status(403).json({ error: 'Forbidden' });
+      if (req.user.role !== 'buyer') return res.status(403).json({ error: 'Forbidden - UnAuthorised Access' });
 
       const { productId, quantity } = req.body;
       const product = await Product.findByPk(productId);
