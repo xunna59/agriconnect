@@ -1,7 +1,41 @@
+const PaystackService = require('../services/paystack');
 const { Order, Product, WalletTransaction, User } = require('../models');
 
+
 const OrderController = {
-  placeOrder: async (req, res) => {
+  // placeOrder: async (req, res) => {
+  //   try {
+  //     if (req.user.role !== 'buyer') return res.status(403).json({ error: 'Forbidden' });
+
+  //     const { productId, quantity } = req.body;
+  //     const product = await Product.findByPk(productId);
+  //     if (!product) return res.status(404).json({ error: 'Product not found' });
+
+  //     const totalPrice = product.price * quantity;
+
+  //     const order = await Order.create({
+  //       buyerId: req.user.id,
+  //       productId,
+  //       quantity,
+  //       totalPrice,
+  //       status: 'pending'
+  //     });
+
+  //     await WalletTransaction.create({
+  //       userId: req.user.id,
+  //       amount: totalPrice,
+  //       type: 'escrow_hold',
+  //       reference: `Order#${order.id}`,
+  //       note: 'Funds held in escrow'
+  //     });
+
+  //     res.json(order);
+  //   } catch (err) {
+  //     res.status(500).json({ error: err.message });
+  //   }
+  // },
+
+   placeOrder: async (req, res) => {
     try {
       if (req.user.role !== 'buyer') return res.status(403).json({ error: 'Forbidden' });
 
@@ -16,19 +50,28 @@ const OrderController = {
         productId,
         quantity,
         totalPrice,
-        status: 'pending'
+        status: 'pending',
       });
 
-      await WalletTransaction.create({
-        userId: req.user.id,
-        amount: totalPrice,
-        type: 'escrow_hold',
-        reference: `Order#${order.id}`,
-        note: 'Funds held in escrow'
-      });
+      const paymentInit = await PaystackService.initializePayment(
+        req.user.email,
+        totalPrice,
+        {
+          orderId: order.id,
+          buyerId: req.user.id,
+          farmerId: product.farmerId,
+        }
+      );
 
-      res.json(order);
+      res.json({
+        status: 'success',
+        message: 'Payment initialized, proceed to pay using Paystack.',
+        paymentUrl: paymentInit.data.authorization_url,
+        reference: paymentInit.data.reference,
+        order,
+      });
     } catch (err) {
+      console.error('Error placing order:', err);
       res.status(500).json({ error: err.message });
     }
   },
@@ -79,7 +122,47 @@ const OrderController = {
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
-  }
+  },
+
+  verifyPayment: async (req, res) => {
+    try {
+      const { reference } = req.params;
+
+      const response = await PaystackService.verifyPayment(reference);
+
+      if (response.data.status !== 'success') {
+        return res.status(400).json({ error: 'Payment not successful' });
+      }
+
+      const metadata = response.data.metadata;
+      const { orderId, buyerId } = metadata;
+
+      const order = await Order.findByPk(orderId);
+      if (!order) return res.status(404).json({ error: 'Order not found' });
+
+      // 💰 Mark order as paid
+      order.status = 'paid';
+      await order.save();
+
+      // 💼 Log escrow transaction
+      await WalletTransaction.create({
+        userId: buyerId,
+        amount: order.totalPrice,
+        type: 'escrow_hold',
+        reference,
+        note: 'Funds held in escrow',
+      });
+
+      res.json({
+        status: 'success',
+        message: 'Payment verified and funds held in escrow',
+        data: order,
+      });
+    } catch (err) {
+      console.error('Payment verification failed:', err);
+      res.status(500).json({ error: err.message });
+    }
+  },
 };
 
 module.exports = OrderController;

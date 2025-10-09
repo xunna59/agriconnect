@@ -56,6 +56,10 @@ router.post('/orders', roleMiddleware(['buyer']), OrderController.placeOrder);
 router.post('/orders/:id/confirm', roleMiddleware(['buyer']), OrderController.confirmDelivery);
 router.get('/orders', roleMiddleware(['buyer','farmer','admin']), OrderController.listOrders);
 
+// payment
+router.get('/verify/:reference', roleMiddleware(['buyer']), OrderController.verifyPayment);
+
+
 // Payouts
 router.post('/payouts', roleMiddleware(['farmer']), PayoutController.requestPayout);
 router.post('/payouts/:id/approve', roleMiddleware(['admin']), PayoutController.approvePayout);
