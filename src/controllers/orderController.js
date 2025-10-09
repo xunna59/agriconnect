@@ -3,37 +3,7 @@ const { Order, Product, WalletTransaction, User } = require('../models');
 
 
 const OrderController = {
-  // placeOrder: async (req, res) => {
-  //   try {
-  //     if (req.user.role !== 'buyer') return res.status(403).json({ error: 'Forbidden' });
-
-  //     const { productId, quantity } = req.body;
-  //     const product = await Product.findByPk(productId);
-  //     if (!product) return res.status(404).json({ error: 'Product not found' });
-
-  //     const totalPrice = product.price * quantity;
-
-  //     const order = await Order.create({
-  //       buyerId: req.user.id,
-  //       productId,
-  //       quantity,
-  //       totalPrice,
-  //       status: 'pending'
-  //     });
-
-  //     await WalletTransaction.create({
-  //       userId: req.user.id,
-  //       amount: totalPrice,
-  //       type: 'escrow_hold',
-  //       reference: `Order#${order.id}`,
-  //       note: 'Funds held in escrow'
-  //     });
-
-  //     res.json(order);
-  //   } catch (err) {
-  //     res.status(500).json({ error: err.message });
-  //   }
-  // },
+ 
 
    placeOrder: async (req, res) => {
     try {
@@ -49,7 +19,7 @@ const OrderController = {
         buyerId: req.user.id,
         productId,
         quantity,
-        totalPrice,
+        totalAmount: totalPrice,
         status: 'pending',
       });
 
