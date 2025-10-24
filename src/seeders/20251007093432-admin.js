@@ -14,7 +14,7 @@ module.exports = {
     if (!existingAdmin.length) {
       await queryInterface.bulkInsert('users', [
         {
-          id: Sequelize.literal('gen_random_uuid()'),
+          id: '0000-0000-0000-0001',
           fullname: 'Farm Connect',
           email: 'admin@farmconnect.com',
           phone: null,

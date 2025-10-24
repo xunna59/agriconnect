@@ -1,26 +1,68 @@
-const jwt = require('jsonwebtoken');
+const errorHandler = (err, req, res, next) => {
+    console.error(err);
 
-const JWT_SECRET = process.env.JWT_SECRET;
-
-const authenticateUser = (req, res, next) => {
-    const authHeader = req.header('Authorization');
-    if (!authHeader) {
-        return res.status(401).json({ success: false, error: 'Access denied - No token provided.' });
+    if (err.name === 'SequelizeValidationError') {
+        return res.status(400).json({
+            error: 'Validation Error',
+            message: err.errors.map(e => e.message),
+        });
     }
 
-    const token = authHeader.replace('Bearer ', '');
-    if (!token) {
-        return res.status(401).json({ success: false, error: 'Access denied. Invalid token format.' });
+    if (err.name === 'SequelizeUniqueConstraintError') {
+        return res.status(400).json({
+            error: 'Unique Constraint Error',
+            message: err.errors.map(e => e.message),
+        });
     }
 
-    try {
-        const decoded = jwt.verify(token, JWT_SECRET);
-        req.user = decoded;
-
-        next();
-    } catch (error) {
-        res.status(401).json({ success: false, error: 'Invalid token.', expired: true });
+    // Handle network-related errors
+    if (err.code === 'ECONNREFUSED') {
+        return res.status(503).json({
+            success: false,
+            error: 'Network Error',
+            message: 'Connection refused by the server',
+        });
     }
+
+    if (err.code === 'ETIMEDOUT') {
+        return res.status(504).json({
+            success: false,
+            error: 'Network Error',
+            message: 'Request timed out',
+        });
+    }
+
+    if (err.code === 'ENOTFOUND') {
+        return res.status(503).json({
+            success: false,
+            error: 'Network Error',
+            message: 'Server not found',
+        });
+    }
+
+    if (err.code === 'EHOSTUNREACH') {
+        return res.status(503).json({
+            error: 'Network Error',
+            message: 'Host is unreachable',
+        });
+    }
+
+    if (err.code === 'ECONNRESET') {
+        return res.status(503).json({
+            error: 'Network Error',
+            details: 'Connection was reset by the server',
+        });
+    }
+
+
+
+    res.status(500).json({
+        success: false,
+        error: 'Internal Server Error',
+        message: err.message,
+    });
+
+
 };
 
-module.exports = authenticateUser;
+module.exports = errorHandler;
